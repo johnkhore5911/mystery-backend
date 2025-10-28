@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
-  orderNumber: {
-    type: String,
-    required: true,
-    unique: true
-  },
+  // orderNumber: {
+  //   type: String,
+  //   required: true,
+  //   unique: true
+  // },
   tableNumber: {
     type: String,
     required: true
@@ -71,11 +71,11 @@ const orderSchema = new mongoose.Schema({
 });
 
 // Generate order number
-orderSchema.pre('save', async function(next) {
-  if (!this.orderNumber) {
-    this.orderNumber = 'MYS-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-  }
-  next();
-});
+// orderSchema.pre('save', async function(next) {
+//   if (!this.orderNumber) {
+//     this.orderNumber = 'MYS-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+//   }
+//   next();
+// });
 
 module.exports = mongoose.model('Order', orderSchema);

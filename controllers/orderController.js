@@ -18,6 +18,7 @@ exports.createOrder = async (req, res) => {
       paymentId
     } = req.body;
 
+    console.log("req.body: ",req.body);
     // Validate required fields
     if (!tableNumber || !customerEmail || !items || !total || !paymentId) {
       return res.status(400).json({
