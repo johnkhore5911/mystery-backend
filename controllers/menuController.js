@@ -4,23 +4,70 @@ const MenuItem = require('../models/MenuItem');
 // @desc    Get all categories with items
 // @route   GET /api/menu/categories
 // @access  Public
+// exports.getAllCategories = async (req, res) => {
+//   try {
+//     const categories = await Category.find({ isActive: true }).sort('order');
+    
+//     // Get items for each category
+//     const categoriesWithItems = await Promise.all(
+//       categories.map(async (category) => {
+//         const items = await MenuItem.find({ 
+//           category: category._id,
+//           isAvailable: true 
+//         });
+        
+//         return {
+//           id: category._id,
+//           name: category.name,
+//           icon: category.icon,
+//           items
+//         };
+//       })
+//     );
+
+//     res.json({
+//       success: true,
+//       categories: categoriesWithItems
+//     });
+//   } catch (error) {
+//     console.error('Get categories error:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Error fetching categories',
+//       error: error.message
+//     });
+//   }
+// };
+
+
 exports.getAllCategories = async (req, res) => {
   try {
     const categories = await Category.find({ isActive: true }).sort('order');
-    
-    // Get items for each category
+
     const categoriesWithItems = await Promise.all(
       categories.map(async (category) => {
-        const items = await MenuItem.find({ 
+        const items = await MenuItem.find({
           category: category._id,
-          isAvailable: true 
+          isAvailable: true
         });
-        
+
+        // Map items to match the desired frontend structure
+        const formattedItems = items.map(item => ({
+          id: item._id, // Use _id as id
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          image: item.image,
+          isVeg: item.isVeg,
+          isPopular: item.isPopular,
+          prepTime: item.prepTime,
+        }));
+
         return {
-          id: category._id,
+          id: category._id, // Use _id as id
           name: category.name,
           icon: category.icon,
-          items
+          items: formattedItems // Use the new formatted items
         };
       })
     );
@@ -29,6 +76,7 @@ exports.getAllCategories = async (req, res) => {
       success: true,
       categories: categoriesWithItems
     });
+
   } catch (error) {
     console.error('Get categories error:', error);
     res.status(500).json({
@@ -38,6 +86,8 @@ exports.getAllCategories = async (req, res) => {
     });
   }
 };
+
+
 
 // @desc    Create category
 // @route   POST /api/menu/categories
