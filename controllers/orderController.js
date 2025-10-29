@@ -3,6 +3,14 @@ const Customer = require('../models/Customer');
 const MenuItem = require('../models/MenuItem');
 const { sendOrderReceipt } = require('../utils/email');
 
+const generateOrderNumber = async () => {
+    const lastOrder = await Order.findOne().sort({ createdAt: -1 });
+    const lastNumber = lastOrder && lastOrder.orderNumber ? parseInt(lastOrder.orderNumber.slice(1)) : 0;
+    const newNumber = lastNumber + 1;
+    return `M${newNumber.toString().padStart(6, '0')}`; // e.g., M000001
+};
+
+
 // @desc    Create order after successful payment
 // @route   POST /api/orders
 // @access  Public
@@ -18,6 +26,7 @@ exports.createOrder = async (req, res) => {
       paymentId
     } = req.body;
 
+    const orderNumber = await generateOrderNumber();
     console.log("req.body: ",req.body);
     // Validate required fields
     if (!tableNumber || !customerEmail || !items || !total || !paymentId) {
@@ -29,6 +38,7 @@ exports.createOrder = async (req, res) => {
 
     // Create order
     const order = await Order.create({
+      orderNumber,
       tableNumber,
       customerEmail,
       items,
