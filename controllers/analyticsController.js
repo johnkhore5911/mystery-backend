@@ -202,3 +202,111 @@ exports.getPopularItems = async (req, res) => {
     });
   }
 };
+
+
+// @desc Get orders by category
+// @route GET /api/analytics/categories
+// @access Private
+exports.getCategoryData = async (req, res) => {
+  try {
+    // First, get all orders with populated menu items
+    const orders = await Order.find({ paymentStatus: 'completed' })
+      .populate({
+        path: 'items.menuItem',
+        populate: {
+          path: 'category',
+          select: 'name'
+        }
+      });
+
+    // Create a map to count orders by category
+    const categoryMap = {};
+
+    orders.forEach(order => {
+      order.items.forEach(item => {
+        if (item.menuItem && item.menuItem.category) {
+          const categoryName = item.menuItem.category.name;
+          if (!categoryMap[categoryName]) {
+            categoryMap[categoryName] = 0;
+          }
+          categoryMap[categoryName] += item.quantity;
+        }
+      });
+    });
+
+    // Convert to array format for pie chart
+    const colors = ['#218D8D', '#F59E0B', '#EF4444', '#8B5CF6', '#10B981', '#3B82F6'];
+    const categoryData = Object.entries(categoryMap).map(([category, value], index) => ({
+      category,
+      value,
+      color: colors[index % colors.length]
+    }));
+
+    res.json({
+      success: true,
+      data: categoryData
+    });
+  } catch (error) {
+    console.error('Get category data error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching category data',
+      error: error.message
+    });
+  }
+};
+
+// @desc Get peak hours data
+// @route GET /api/analytics/peak-hours
+// @access Private
+exports.getPeakHoursData = async (req, res) => {
+  try {
+    const peakHours = await Order.aggregate([
+      {
+        $match: { paymentStatus: 'completed' }
+      },
+      {
+        $group: {
+          _id: { $hour: '$createdAt' },
+          orders: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id': 1 }
+      }
+    ]);
+
+    // Format the data with AM/PM
+    const formattedData = peakHours.map(item => {
+      const hour = item._id;
+      let formattedHour;
+      
+      if (hour === 0) {
+        formattedHour = '12 AM';
+      } else if (hour < 12) {
+        formattedHour = `${hour} AM`;
+      } else if (hour === 12) {
+        formattedHour = '12 PM';
+      } else {
+        formattedHour = `${hour - 12} PM`;
+      }
+
+      return {
+        hour: formattedHour,
+        orders: item.orders
+      };
+    });
+
+    res.json({
+      success: true,
+      data: formattedData
+    });
+  } catch (error) {
+    console.error('Get peak hours data error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching peak hours data',
+      error: error.message
+    });
+  }
+};
